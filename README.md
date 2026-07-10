@@ -197,3 +197,30 @@ These sites are specifically referred to in the rest of the documentation provid
 #### Bonus Documentation
 - [Planning and Tracking Your Project](https://docs.github.com/en/issues/planning-and-tracking-with-projects)
 - [Undo changes, commits, pushes, etc.](https://sethrobertson.github.io/GitFixUm/fixup.html)
+
+# Project2_COP3530
+This project uses the https://www.kaggle.com/datasets/davidcariboo/player-scores
+Data is not included in this repo(too large)
+
+## Get a Kaggle API token
+1) login to Kaggle
+2) Go to settings
+3) Scroll to API click Create New Token
+4) this will download the kaggle.json
+
+## Place token where Kaggle's tool expects it
+Mac
+mkdir -p ~/.kaggle
+mv ~/Downloads/kaggle.json ~/.kaggle/
+chmod 600 ~/.kaggle/kaggle.json
+
+Windows
+move 'kaggle.json' into 'C:\users\YourName\.kaggle'
+
+
+## Install the Kaggle CLI
+pip install kaggle
+
+## DOWNLOAD the dataset
+Run from the root of the project folder
+kaggle datasets download -d davidcariboo/player-scores -p data/ --unzip
