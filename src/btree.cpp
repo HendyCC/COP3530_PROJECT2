@@ -1,6 +1,6 @@
 
-#include "record.hpp"
-#include "btree.hpp"
+#include "../include/record.hpp"
+#include "../include/btree.hpp"
 #include <vector>
 
 int Btree::size() const {

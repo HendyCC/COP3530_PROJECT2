@@ -4,16 +4,6 @@ project(FootballValuationTrees)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(main
-        src/main.cpp # your main file
-        src/btree.cpp
-        src/bplustree.cpp
-        src/csv_loader.cpp
-        src/benchmark.cpp
-        )
-
-target_include_directories(main PRIVATE include)
-
 ##pull in desired version of catch through cmake automatically, make it available
 Include(FetchContent)
 FetchContent_Declare(
@@ -22,6 +12,32 @@ FetchContent_Declare(
         GIT_TAG        v3.5.2 # if you run into issues, try updating your editor or downgrading to a lower version of catch v3
 )
 FetchContent_MakeAvailable(Catch2)
+
+FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG 3.4
+)
+FetchContent_MakeAvailable(glfw)
+
+find_package(OpenGL REQUIRED)
+
+add_executable(main 
+    src/main.cpp
+    src/btree.cpp
+    src/bplustree.cpp
+    src/csv_loader.cpp
+    src/benchmark.cpp
+    imgui/imgui.cpp 
+    imgui/imgui_draw.cpp 
+    imgui/imgui_tables.cpp 
+    imgui/imgui_widgets.cpp
+    imgui/imgui_impl_glfw.cpp
+    imgui/imgui_impl_opengl3.cpp
+)
+
+target_link_libraries(main glfw OpenGL::GL)
+target_include_directories(main PRIVATE imgui imgui/backends)
 
 include_directories(src)
         
