@@ -42,7 +42,9 @@ We will implement both structures using market value as the primary key and play
 
 ### Build
 mkdir build && cd build
+
 cmake ..
+
 cmake --build .
 
 ### Run
