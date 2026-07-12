@@ -1,8 +1,9 @@
 using namespace std;
 #include "../include/bplustree.hpp"
 
-void BPlusTree::splitLeafNode(Node* leafNode, int& newKey, Node*& newLeaf) {
+void BPlusTree::splitLeafNode(Node* leafNode, PlayerValuation& newKey, Node*& newLeaf) {
     newLeaf = new Node(true);
+    splitCount++;
     for (int i = order / 2; i < leafNode->keys.size(); ++i) {
         newLeaf->keys.push_back(leafNode->keys[i]);
     }
@@ -14,8 +15,9 @@ void BPlusTree::splitLeafNode(Node* leafNode, int& newKey, Node*& newLeaf) {
     newKey = newLeaf->keys[0];
 };
 
-void BPlusTree::splitInternalNode(Node* internalNode, int& newKey, Node*& newInternal) {
+void BPlusTree::splitInternalNode(Node* internalNode, PlayerValuation& newKey, Node*& newInternal) {
     newInternal = new Node(false);
+    splitCount++;
     for (int i = order / 2 + 1; i < internalNode->keys.size(); ++i) {
         newInternal->keys.push_back(internalNode->keys[i]);
     }
@@ -41,22 +43,23 @@ void BPlusTree::deleteTree(Node* node) {
     BPlusTree::BPlusTree(int neworder){
         this->order = neworder;
         root = nullptr;
+        splitCount = 0;
     };
 
     BPlusTree::~BPlusTree() {
         deleteTree(root);
     };
 
-    bool BPlusTree::search(int key){
+    bool BPlusTree::search(double key){
         if (!root) return false;
         Node* curr = root;
         while (curr != nullptr) {
             int i = 0;
-            while (i < curr->keys.size() && key > curr->keys[i]) {
+            while (i < curr->keys.size() && key > curr->keys[i].marketValue) {
                 i++; // Look through all keys in the current node
             }
 
-            if (i < curr->keys.size() && key == curr->keys[i]) {
+            if (i < curr->keys.size() && key == curr->keys[i].marketValue) {
                 return true; // Key found
             }
 
@@ -69,7 +72,7 @@ void BPlusTree::deleteTree(Node* node) {
         return false;
     };
 
-    void BPlusTree::insert(int key){
+    void BPlusTree::insert(const PlayerValuation& key){
         if (!root) {
             root = new Node(true); // Create a new leaf node
             root->keys.push_back(key); // Insert the key
@@ -92,9 +95,9 @@ void BPlusTree::deleteTree(Node* node) {
         curr->keys.insert(lower_bound(curr->keys.begin(), curr->keys.end(), key), key);
 
         while (curr->keys.size() >= order) {
-            int newKey;
+            PlayerValuation newKey;
             Node* newNode;
-            
+
             if (curr->isLeaf) {
                 splitLeafNode(curr, newKey, newNode);
             } else {
@@ -120,7 +123,7 @@ void BPlusTree::deleteTree(Node* node) {
         }
     };
 
-    void BPlusTree::remove(int key){
+    void BPlusTree::remove(const PlayerValuation& key){
         if (!root) return; // Tree is empty
 
         Node* curr = root;
@@ -239,30 +242,63 @@ void BPlusTree::deleteTree(Node* node) {
         }
 
     };
-    vector<int> BPlusTree::rangeSearch(int startKey, int endKey){
-        if (!root) return {}; // Tree is empty
 
-        vector<int> result;
+    vector<PlayerValuation> BPlusTree::rangeSearch(double startKey, double endKey){
+        if (!root) return {};
+
+        lastQueryNodeVisits = 0;
+        lastQueryComparisons = 0;
+        vector<PlayerValuation> result;
 
         Node* curr = root;
         while (!curr->isLeaf) {
+            lastQueryNodeVisits++;
             int i = 0;
-            while (i < curr->keys.size() && startKey > curr->keys[i]) {
-                i++; // Look through all keys in the current node
+            while (i < curr->keys.size() && startKey > curr->keys[i].marketValue) {
+                lastQueryComparisons++;
+                i++;
             }
-            curr = curr->children[i]; // Move to the appropriate child
+            curr = curr->children[i];
         }
 
-        // Now curr is a leaf node, collect keys in the range
+        lastQueryNodeVisits++;
+
         while (curr != nullptr) {
-            for (int key : curr->keys) {
-                if (key >= startKey && key <= endKey) {
+            for (const PlayerValuation& key : curr->keys) {
+                lastQueryComparisons++;
+                if (key.marketValue >= startKey && key.marketValue <= endKey) {
                     result.push_back(key);
-                } else if (key > endKey) {
-                    return result; // No need to check further
+                } else if (key.marketValue > endKey) {
+                    return result;
                 }
             }
-            curr = curr->next; // Move to the next leaf node
+            curr = curr->next;
         }
         return result;
-    };
+    }
+
+int BPlusTree::height(Node* node) const {
+    if (node == nullptr) {
+        return 0;
+    }
+    if (node->isLeaf) {
+        return 1;
+    }
+    return 1 + height(node->children.front());
+}
+
+int BPlusTree::getHeight() const {
+    return height(root);
+}
+
+int BPlusTree::getSplitCount() const {
+    return splitCount;
+}
+
+int BPlusTree::getLastQueryNodeVisits() const {
+    return lastQueryNodeVisits;
+}
+
+int BPlusTree::getLastQueryComparisons() const {
+    return lastQueryComparisons;
+}

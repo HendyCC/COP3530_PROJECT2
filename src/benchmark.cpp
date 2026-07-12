@@ -5,7 +5,9 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
-#include "../include/record.hpp" 
+#include "../include/record.hpp"
+#include "../include/btree.hpp"
+#include "../include/bplustree.hpp" 
 
 class Benchmarker {
 public:
@@ -59,27 +61,23 @@ public:
         auto start = now();
         for (const auto& record : dataset) {
             // Casts double marketValue to int to match your B+ Tree's sign signature
-            tree.insert(static_cast<int>(record.marketValue));
+            tree.insert(record);
         }
         auto end = now();
         return duration_ms(start, end);
     }
 
     static double benchmarkBPlusTreeLookup(BPlusTree& tree, double target_val, int& out_found) {
-        int int_key = static_cast<int>(target_val);
         auto start = now();
-        bool found = tree.search(int_key);
+        bool found = tree.search(target_val);
         auto end = now();
         out_found = found ? 1 : 0;
         return duration_us(start, end);
     }
 
     static double benchmarkBPlusTreeRange(BPlusTree& tree, double min_val, double max_val, int& out_count) {
-        int startKey = static_cast<int>(min_val);
-        int endKey = static_cast<int>(max_val);
-        
         auto start = now();
-        std::vector<int> results = tree.rangeSearch(startKey, endKey);
+        std::vector<PlayerValuation> results = tree.rangeSearch(min_val, max_val);
         auto end = now();
         out_count = results.size();
         return duration_ms(start, end);

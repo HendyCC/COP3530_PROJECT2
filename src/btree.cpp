@@ -7,13 +7,39 @@ int Btree::size() const {
     return count;
 }
 
+int Btree::height(Btree_node* node) const {
+    if (node == nullptr) {
+        return 0;
+    }
+    if (node->isleaf) {
+        return 1;
+    }
+    return 1 + height(node->children.front());
+}
+
+int Btree::getHeight() const {
+    return height(root);
+}
+
+int Btree::getSplitCount() const {
+    return splitCount;
+}
+
+int Btree::getLastQueryNodeVisits() const {
+    return lastQueryNodeVisits;
+}
+
+int Btree::getLastQueryComparisons() const {
+    return lastQueryComparisons;
+}
+
 
 //True if record1 is before record2
 bool order_check (const PlayerValuation& record1, const PlayerValuation& record2) {
     if(record1.marketValue != record2.marketValue) {
         return record1.marketValue < record2.marketValue;
     }
-    return record1.marketValue < record2.marketValue;
+    return record1.playerId < record2.playerId;
 }
 
 
@@ -70,6 +96,7 @@ void Btree::insert(const PlayerValuation& record){
 void Btree::split_children(Btree_node* parent, int child_index) {
     Btree_node* full_child = parent->children[child_index];
     int middle = full_child->keys.size() / 2;
+    splitCount++;
 
     //middle key goes up
     PlayerValuation middle_key = full_child->keys[middle];
@@ -97,8 +124,10 @@ bool Btree::search(Btree_node* node, double market_value, int player_id, PlayerV
     if (node == nullptr) {
         return false;
     }
+    lastQueryNodeVisits++;
     //checking node
     for(int i = 0; i < node->keys.size(); i++) {
+        lastQueryComparisons++;
         if(node->keys[i].marketValue == market_value && node->keys[i].playerId == player_id) {
             result = node->keys[i];
             return true;
@@ -130,26 +159,34 @@ bool Btree::search(double market_value, int player_id, PlayerValuation& result) 
 
 vector<PlayerValuation> Btree::range_search(double min_value, double max_value) {
     vector<PlayerValuation> results;
-    range_search(root, min_value, max_value, results);
+    lastQueryNodeVisits = 0;
+    lastQueryComparisons = 0;
+    range_search(root, min_value, max_value, results, lastQueryNodeVisits, lastQueryComparisons);
     return results;
 }
-void Btree::range_search(Btree_node* node, double min_value, double max_value, vector<PlayerValuation>& results) {
-    if(root == nullptr) {
+void Btree::range_search(Btree_node* node, double min_value, double max_value, vector<PlayerValuation>& results, int& nodeVisits, int& comparisons) {
+    if (node == nullptr) {
         return;
     }
+
+    nodeVisits++;
+
     int i = 0;
-    while(i < node->keys.size()) {
-        if(!node->isleaf && min_value < node->keys[i].marketValue) {
-            range_search(node->children[i], min_value, max_value, results);
+    while (i < node->keys.size()) {
+        comparisons++;
+        if (!node->isleaf && min_value <= node->keys[i].marketValue) {
+            range_search(node->children[i], min_value, max_value, results, nodeVisits, comparisons);
         }
 
-        if(node->keys[i].marketValue >= min_value && node->keys[i].marketValue <= max_value) {
+        comparisons++;
+        if (node->keys[i].marketValue >= min_value && node->keys[i].marketValue <= max_value) {
             results.push_back(node->keys[i]);
         }
 
         i++;
     }
-    if(!node->isleaf && max_value > node->keys[i-1].marketValue) {
-        range_search(node->children[i], min_value, max_value, results);
+
+    if (!node->isleaf && (node->keys.empty() || max_value >= node->keys.back().marketValue)) {
+        range_search(node->children[i], min_value, max_value, results, nodeVisits, comparisons);
     }
 }
